@@ -3,11 +3,16 @@ package com.example.bukuku.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -15,12 +20,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -38,10 +45,10 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Layar Detail Buku:
- * - Menampilkan rincian data buku lengkap.
- * - Tombol untuk mengubah status bacaan (Belum dibaca / Sudah dibaca).
- * - Tombol untuk menuju form ubah data.
- * - Tombol untuk menghapus buku (dengan dialog konfirmasi agar aman).
+ * - Menampilkan rincian data buku lengkap dalam bentuk kartu informasi terstruktur.
+ * - Tombol aksi cepat untuk menandai status bacaan (Sudah / Belum dibaca).
+ * - Tombol untuk mengubah data buku (berpindah ke FormScreen mode edit).
+ * - Tombol hapus buku yang dilengkapi dialog konfirmasi.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,7 +69,7 @@ fun DetailScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Detail Buku") },
+                title = { Text("Detail Buku", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -98,88 +105,115 @@ fun DetailScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(16.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Kartu Informasi Buku
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Text(
-                            text = currentBuku.judul,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
+                Column {
+                    // Kartu Header Buku (Inisial Avatar + Judul + Status)
+                    Card(
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                modifier = Modifier.size(64.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = currentBuku.judul.firstOrNull()?.uppercase() ?: "B",
+                                        style = MaterialTheme.typography.headlineMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
 
-                        Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
 
-                        Text(
-                            text = "Penulis:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = if (currentBuku.penulis.isNotBlank()) currentBuku.penulis else "-",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                            Text(
+                                text = currentBuku.judul,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
 
-                        Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        Text(
-                            text = "Kategori:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        Text(
-                            text = if (currentBuku.kategori.isNotBlank()) currentBuku.kategori else "-",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Text(
-                            text = "Status Bacaan:",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        val statusLabel = if (currentBuku.sudahDibaca) "Sudah dibaca" else "Belum dibaca"
-                        val statusColor = if (currentBuku.sudahDibaca) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.outline
+                            StatusBadge(sudahDibaca = currentBuku.sudahDibaca)
                         }
-                        Text(
-                            text = statusLabel,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = statusColor
-                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Kartu Rincian Informasi
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            // Penulis
+                            InfoRow(
+                                label = "Penulis",
+                                value = if (currentBuku.penulis.isNotBlank()) currentBuku.penulis else "-"
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.surfaceVariant)
+
+                            // Kategori
+                            InfoRow(
+                                label = "Kategori",
+                                value = if (currentBuku.kategori.isNotBlank()) currentBuku.kategori else "-"
+                            )
+
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.surfaceVariant)
+
+                            // Status Bacaan
+                            InfoRow(
+                                label = "Status",
+                                value = if (currentBuku.sudahDibaca) "Sudah dibaca" else "Belum dibaca"
+                            )
+                        }
                     }
                 }
 
-                // Tombol-tombol Aksi (Ubah Status, Ubah Data, Hapus)
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Tombol-tombol Aksi
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Tombol Toggle Status Sudah/Belum Dibaca
+                    // Tombol Toggle Status Sudah / Belum Dibaca
                     Button(
                         onClick = { viewModel.toggleStatus(currentBuku) },
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = if (currentBuku.sudahDibaca) "Tandai Belum Dibaca" else "Tandai Sudah Dibaca"
+                            text = if (currentBuku.sudahDibaca) "Tandai Belum Dibaca" else "Tandai Sudah Dibaca",
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
                     // Tombol Edit Buku
                     OutlinedButton(
                         onClick = { onEditClick(currentBuku.id) },
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Ubah Data Buku")
+                        Text("Ubah Data Buku", fontWeight = FontWeight.SemiBold)
                     }
 
                     // Tombol Hapus Buku
@@ -188,22 +222,24 @@ fun DetailScreen(
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error
                         ),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Hapus Buku")
+                        Text("Hapus Buku", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         }
     }
 
-    // Dialog konfirmasi hapus agar alur aman dari salah klik
+    // Dialog konfirmasi hapus
     if (showDeleteDialog) {
         val currentBuku = buku
         AlertDialog(
+            shape = RoundedCornerShape(16.dp),
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Konfirmasi Hapus") },
-            text = { Text("Apakah Anda yakin ingin menghapus buku \"${currentBuku?.judul}\"?") },
+            title = { Text("Konfirmasi Hapus", fontWeight = FontWeight.Bold) },
+            text = { Text("Apakah Anda yakin ingin menghapus buku \"${currentBuku?.judul}\"? Data yang dihapus tidak dapat dikembalikan.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -215,7 +251,7 @@ fun DetailScreen(
                         }
                     }
                 ) {
-                    Text("Hapus", color = MaterialTheme.colorScheme.error)
+                    Text("Hapus", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -223,6 +259,34 @@ fun DetailScreen(
                     Text("Batal")
                 }
             }
+        )
+    }
+}
+
+/**
+ * Komponen pembantu untuk menampilkan baris informasi (Label & Nilai).
+ */
+@Composable
+private fun InfoRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.outline
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
